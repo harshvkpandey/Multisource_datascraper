@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: datascraping_pipeline
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OUTPUT_PATH=output/scraped_data.json
+    volumes:
+      # Mount output directory to persist results on host machine
+      - ./output:/app/output
+      # Mount .cache for HuggingFace model caching between runs
+      - huggingface_cache:/root/.cache/huggingface
+    restart: "no"
+
+volumes:
+  # Named volume ensures the ~80 MB NLI model is only downloaded once
+  huggingface_cache:
+    driver: local
