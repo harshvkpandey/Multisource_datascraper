@@ -1,21 +1,3 @@
-"""
-main.py
-=======
-Async pipeline orchestrator.
-
-Runs all scraper coroutines concurrently via asyncio.gather(), then:
-  1. Detects language (langdetect)
-  2. Generates topic tags (ZeroShotTagger)
-  3. Computes trust score (TrustScoreEngine)
-  4. Splits content into chunks (RecursiveChunker)
-  5. Validates each item with Pydantic ScrapedItem
-  6. Writes validated array to output/scraped_data.json
-
-Target sources:
-  Blogs   : karpathy.github.io, ruder.io, lilianweng.github.io
-  YouTube : 3Blue1Brown Neural Networks, Karpathy Let's Build GPT
-  PubMed  : PMID 33423054 (AI in genomic diagnostics)
-"""
 
 from __future__ import annotations
 
@@ -46,10 +28,7 @@ from scraper.youtube_scraper import YouTubeScraper
 from scoring.trust_score import compute_trust_score
 from utils.chunking import RecursiveChunker
 from utils.tagging import ZeroShotTagger
-
-# ---------------------------------------------------------------------------
 # Target sources
-# ---------------------------------------------------------------------------
 BLOG_URLS: list[str] = [
     "https://karpathy.github.io/2015/05/21/rnn-effectiveness/",
     "https://ruder.io/optimizing-gradient-descent/",
@@ -64,11 +43,6 @@ PUBMED_URLS: list[str] = [
 ]
 
 OUTPUT_PATH: Path = Path(os.getenv("OUTPUT_PATH", "output/scraped_data.json"))
-
-
-# ---------------------------------------------------------------------------
-# Helper: detect language
-# ---------------------------------------------------------------------------
 def detect_language(text: str) -> str:
     """Detect ISO 639-1 language code from text. Returns 'en' on failure."""
     if not text or not text.strip():
@@ -78,27 +52,11 @@ def detect_language(text: str) -> str:
         return detect(text[:1000])
     except Exception:  # noqa: BLE001
         return "en"
-
-
-# ---------------------------------------------------------------------------
-# Helper: build ScrapedItem from raw scraper dict
-# ---------------------------------------------------------------------------
 def build_item(
     raw: dict[str, Any],
     tagger: ZeroShotTagger,
     chunker: RecursiveChunker,
 ) -> ScrapedItem:
-    """
-    Transform raw scraper output into a validated ScrapedItem.
-
-    Steps:
-      1. Detect language from text content.
-      2. Run zero-shot tagging on text.
-      3. Compute subjectivity score (abuse prevention).
-      4. Compute trust score.
-      5. Chunk text content.
-      6. Validate and return ScrapedItem.
-    """
     text: str = raw.get("text") or raw.get("abstract") or raw.get("description") or ""
     source_type = raw.get("source_type", "blog")
 
@@ -141,10 +99,6 @@ def build_item(
         content_chunks=chunks,
     )
 
-
-# ---------------------------------------------------------------------------
-# Scraper coroutines
-# ---------------------------------------------------------------------------
 async def scrape_blogs() -> list[dict[str, Any]]:
     """Scrape all configured blog URLs concurrently."""
     async with BlogScraper() as scraper:
@@ -189,10 +143,6 @@ async def scrape_pubmed() -> list[dict[str, Any]]:
             items.append(res)
     return items
 
-
-# ---------------------------------------------------------------------------
-# Main pipeline
-# ---------------------------------------------------------------------------
 async def run_pipeline() -> None:
     """
     Execute the full scraping pipeline:

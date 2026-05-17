@@ -1,8 +1,4 @@
 """
-models.py
-=========
-Pydantic V2 data validation schema for the pipeline output.
-
 Every scraped item is validated against ``ScrapedItem`` before being
 written to ``output/scraped_data.json``. This ensures:
   - Type correctness (str, float, list, etc.)
@@ -11,7 +7,6 @@ written to ``output/scraped_data.json``. This ensures:
   - source_type constrained to a Literal union
   - ISO language code populated by langdetect
 """
-
 from __future__ import annotations
 
 import logging
@@ -73,11 +68,6 @@ class ScrapedItem(BaseModel):
         default_factory=list,
         description="Recursively split content segments (~512 chars, 10% overlap)",
     )
-
-    # ------------------------------------------------------------------
-    # Validators
-    # ------------------------------------------------------------------
-
     @field_validator("source_url")
     @classmethod
     def validate_url(cls, v: str) -> str:
